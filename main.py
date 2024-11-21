@@ -18,7 +18,8 @@ class Game():
         self.stal_timer = 0
 
         # Списки
-        self.bat_list = pygame.sprite.Group()
+        self.bats_list = pygame.sprite.Group()
+        self.stalagtites_list = pygame.sprite.Group()
 
 
     def run(self): 
@@ -43,7 +44,8 @@ class Game():
         self.screen.fill((88, 83, 89))
 
         # отрисовать списки
-        self.bat_list.draw(self.screen)
+        self.bats_list.draw(self.screen)
+        self.stalagtites_list.draw(self.screen)
 
         # отобразить
         pygame.display.flip()
@@ -71,9 +73,13 @@ class Game():
         if self.bat_timer == 100:
             self.generated_bat()
             self.bat_timer = 0
+        if self.stal_timer == 100:
+            self.generated_stal()
+            self.stal_timer = 0
         
         # обновить списки
-        self.bat_list.update()
+        self.bats_list.update()
+        self.stalagtites_list.update()
         
         return 1
     
@@ -84,7 +90,12 @@ class Game():
             bat = Bat(-100, y, 0)
         else:
             bat = Bat(2100, y, 1)
-        self.bat_list.add(bat)
+        self.bats_list.add(bat)
+
+    def generated_stal(self):
+        x = random.randint(0, 2000)
+        stal = Stalagtite(x, -20)
+        self.stalagtites_list.add(stal)
 
     
 class Bat(pygame.sprite.Sprite):
@@ -93,7 +104,7 @@ class Bat(pygame.sprite.Sprite):
         self.height = 100
         self.width = 100
         self.images = []
-        self.images.append(pygame.transform.scale(pygame.image.load('pics/bat/bat.png'), (self.width, self.height)))
+        self.images.append(pygame.transform.scale(pygame.image.load('pics/bat/bat1.png'), (self.width, self.height)))
         if tol == 0:
             for i in range(len(self.images)):
                 self.images[i] = pygame.transform.flip(self.images[i], True, False)
@@ -123,6 +134,38 @@ class Bat(pygame.sprite.Sprite):
         if self.img_index >= len(self.images):
             self.img_index = 0
         self.image = self.images[self.img_index]
+
+
+class Stalagtite(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.height = 100
+        self.width = 100
+        self.preimage = pygame.image.load('pics/stalagtite.png').convert_alpha()
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.rect.x = x
+        self.rect.y = y
+
+    
+    def update(self):
+        super().update()
+
+        # # движение
+        # if self.tol == 0:
+        #     self.rect.x += 5
+        # else:
+        #     self.rect.x -= 5
+
+        # # самовыпил
+        # if self.rect.x < -110 or self.rect.x > 2110:
+        #     self.kill()
+
+        # обновление картинки
+        self.height += 1
+        self.width += 1
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(self.rect.x-0.5, self.rect.y, self.width, self.height)
 
 
 
