@@ -207,6 +207,7 @@ class Stalagtite_fall(pygame.sprite.Sprite):
         # самовыпил
         if self.rect.y + self.height > 1000:
             game.sel_fallen_stal(self.rect.x, self.rect.y, self.height)
+            game.cave_hp -= 5
             self.kill()
 
 class Stalagtite_fallen(pygame.sprite.Sprite):
