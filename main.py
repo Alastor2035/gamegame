@@ -14,7 +14,7 @@ class Game():
         
         # Баланс
         self.score = 0      
-        self.cave_hp = 200
+        self.cave_hp = 100
         self.live = 3
         self.bat_timer = 0
         self.stal_timer = 0
@@ -28,6 +28,8 @@ class Game():
         self.fall_stal_list = pygame.sprite.Group()
         self.fallen_stal_list = pygame.sprite.Group()
         self.cannots_list = pygame.sprite.Group()
+        self.balls_list = pygame.sprite.Group()
+
         self.cannots_list.add(self.cannot)
 
 
@@ -51,6 +53,7 @@ class Game():
         self.fall_stal_list.draw(self.screen)
         self.fallen_stal_list.draw(self.screen)
         self.cannots_list.draw(self.screen)
+        self.balls_list.draw(self.screen)
 
         # для проверки потом убрать
         drawText(self.screen, (255, 255, 255), str(self.cave_hp), pygame.Rect(700, 50+35, 300, 30), font_size=30)
@@ -63,6 +66,9 @@ class Game():
 
 
     def update(self):
+
+        if self.live <= 0:
+            return 0
 
         # проверить взаимодействия
         for e in pygame.event.get():
@@ -77,7 +83,7 @@ class Game():
         if self.bat_timer == 100:
             self.generated_bat()
             self.bat_timer = 0
-        if self.stal_timer == 100:
+        if self.stal_timer >=  80 + self.cave_hp*0.05:
             self.generated_stal()
             self.stal_timer = 0
 
@@ -88,19 +94,29 @@ class Game():
         self.fall_stal_list.update()
         self.fallen_stal_list.update()
         self.cannots_list.update()
+        self.balls_list.update()
 
         # kill killed bat
-        pygame.sprite.groupcollide(self.bats_list, self.stalagtites_list, 1, 0)
-        pygame.sprite.groupcollide(self.bats_list, self.fall_stal_list, 1, 0)
-        pygame.sprite.groupcollide(self.bats_list, self.fallen_stal_list, 1, 0)
+        pygame.sprite.groupcollide(self.bats_list, self.stalagtites_list, 1, 0, pygame.sprite.collide_mask)
+        pygame.sprite.groupcollide(self.bats_list, self.fall_stal_list, 1, 0, pygame.sprite.collide_mask)
+        pygame.sprite.groupcollide(self.bats_list, self.fallen_stal_list, 1, 0, pygame.sprite.collide_mask)
 
-        # collapse fallen stalagtites
+        # collapse gan/fallen stalagtites
         q = len(self.fallen_stal_list)
-        pygame.sprite.groupcollide(self.cannots_list, self.fallen_stal_list, 0, 1)
+        pygame.sprite.groupcollide(self.cannots_list, self.fallen_stal_list, 0, 1, pygame.sprite.collide_mask)
         self.live -= q - len(self.fallen_stal_list)
 
+        # collapse ball/bat stalagtites
+        q = len(self.bats_list)
+        pygame.sprite.groupcollide(self.balls_list, self.bats_list, 0, 1, pygame.sprite.collide_mask)
+        self.score += (q - len(self.bats_list)) * 10
 
-        
+        # collapse ball/fall stalagtite stalagtites
+        q = len(self.bats_list)
+        pygame.sprite.groupcollide(self.balls_list, self.fall_stal_list, 1, 1, pygame.sprite.collide_mask)
+
+
+
         return 1
     
     def generated_bat(self):
@@ -117,11 +133,17 @@ class Game():
         stal = Stalagtite(x, -20)
         self.stalagtites_list.add(stal)
 
-    def sel_fall_stal(self, x, y, size):
+    def set_fall_stal(self, x, y, size):
         self.fall_stal_list.add(Stalagtite_fall(x, y, size))
 
-    def sel_fallen_stal(self, x, y, size):
+    def set_fallen_stal(self, x, y, size):
         self.fallen_stal_list.add(Stalagtite_fallen(x, y, size))
+
+    def shot(self, stx, sty, fnx, fny):
+        if len(self.balls_list) <= 3:
+            dx = fnx - stx
+            dy = fny - sty
+            self.balls_list.add(Ball(stx, sty, 40*dx/(dx*dx+dy*dy)**0.5, 40*dy/(dx*dx+dy*dy)**0.5))
 
 
     
@@ -183,7 +205,7 @@ class Stalagtite(pygame.sprite.Sprite):
 
         # самовыпил
         if self.time_to_die <= 0:
-            game.sel_fall_stal(self.rect.x, self.rect.y, self.height)
+            game.set_fall_stal(self.rect.x, self.rect.y, self.height)
             self.kill()
 
         # обновление картинки
@@ -215,7 +237,7 @@ class Stalagtite_fall(pygame.sprite.Sprite):
 
         # самовыпил
         if self.rect.y + self.height > 1000:
-            game.sel_fallen_stal(self.rect.x, self.rect.y, self.height)
+            game.set_fallen_stal(self.rect.x, self.rect.y, self.height)
             game.cave_hp -= 5
             self.kill()
 
@@ -280,7 +302,33 @@ class Cannot(pygame.sprite.Sprite):
             if e.key == pygame.K_d:
                 self.a = 0.3
         if e.type == pygame.KEYUP:
-            self.a = 0
+            if e.key == pygame.K_a or e.key == pygame.K_d:
+                self.a = 0
+        if e.type == pygame.MOUSEBUTTONDOWN:
+            x, y = pygame.mouse.get_pos()
+            game.shot(self.rect.x+70, self.rect.y, x, y)
+
+class Ball(pygame.sprite.Sprite):
+    def __init__(self, x, y, vx, vy):
+        super().__init__()
+        self.height = 50
+        self.width = 50
+        self.vx = vx
+        self.vy = vy
+        self.preimage = pygame.image.load('pics/ball.png').convert_alpha()
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(x+ self.width/2, y+self.height/2, self.width/2, self.height/2)
+
+    def update(self):
+        super().update()
+
+        self.rect.x += self.vx
+        self.vy += 1
+        self.rect.y += self.vy
+
+        # самовыпил
+        if self.rect.y > 1100:
+            self.kill()
 
         
     
@@ -304,6 +352,7 @@ def main():
     a = 1
     while a:
         a = game.run()
+    print(game.score)
 
 
 if __name__ == "__main__":
