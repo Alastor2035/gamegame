@@ -1,5 +1,7 @@
 import random
 import pygame
+from draw import *
+
 class Game():
     """ Главный класс приложения. """
     
@@ -13,14 +15,20 @@ class Game():
         # Баланс
         self.score = 0      
         self.cave_hp = 200
+        self.live = 3
         self.bat_timer = 0
         self.stal_timer = 0
+
+        # cannot
+        self.cannot = Cannot(1000, 800)
 
         # Списки
         self.bats_list = pygame.sprite.Group()
         self.stalagtites_list = pygame.sprite.Group()
         self.fall_stal_list = pygame.sprite.Group()
         self.fallen_stal_list = pygame.sprite.Group()
+        self.cannots_list = pygame.sprite.Group()
+        self.cannots_list.add(self.cannot)
 
 
     def run(self): 
@@ -29,14 +37,6 @@ class Game():
         self.clock.tick(FPS)
         return a
             
-    def on_key_press(self, key):
-        pass
-    
-    def on_mouse_press(self, key):
-        pass
-    
-    def on_key_release(self, key):
-        pass 
 
     
     def on_draw(self):
@@ -44,11 +44,19 @@ class Game():
         # очистить экран
         self.screen.fill((88, 83, 89))
 
+
         # отрисовать списки
         self.bats_list.draw(self.screen)
         self.stalagtites_list.draw(self.screen)
         self.fall_stal_list.draw(self.screen)
         self.fallen_stal_list.draw(self.screen)
+        self.cannots_list.draw(self.screen)
+
+        # для проверки потом убрать
+        drawText(self.screen, (255, 255, 255), str(self.cave_hp), pygame.Rect(700, 50+35, 300, 30), font_size=30)
+        drawText(self.screen, (255, 255, 255), str(self.score), pygame.Rect(700, 50+35+ 35, 300, 30), font_size=30)
+        drawText(self.screen, (255, 255, 255), str(self.live), pygame.Rect(700, 50+35+35+35, 300, 30), font_size=30)
+
 
         # отобразить
         pygame.display.flip()
@@ -60,15 +68,8 @@ class Game():
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 return 0
-            if e.type == pygame.KEYDOWN:
-                self.on_key_press(e)
-                print(1)
-            if e.type == pygame.MOUSEBUTTONDOWN:
-                self.on_mouse_press(e)
-                print(2)
-            if e.type == pygame.KEYUP:
-                self.on_key_release(e)
-                print(3)
+            else:
+                self.cannot.move(e)
 
         # обновить таймеры   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Сделать зависимости!!!!!!!!!!!!!!!!!!!!!
         self.bat_timer += 1
@@ -79,24 +80,32 @@ class Game():
         if self.stal_timer == 100:
             self.generated_stal()
             self.stal_timer = 0
+
         
         # обновить списки
         self.bats_list.update()
         self.stalagtites_list.update()
         self.fall_stal_list.update()
         self.fallen_stal_list.update()
+        self.cannots_list.update()
 
         # kill killed bat
         pygame.sprite.groupcollide(self.bats_list, self.stalagtites_list, 1, 0)
         pygame.sprite.groupcollide(self.bats_list, self.fall_stal_list, 1, 0)
         pygame.sprite.groupcollide(self.bats_list, self.fallen_stal_list, 1, 0)
 
+        # collapse fallen stalagtites
+        q = len(self.fallen_stal_list)
+        pygame.sprite.groupcollide(self.cannots_list, self.fallen_stal_list, 0, 1)
+        self.live -= q - len(self.fallen_stal_list)
+
+
         
         return 1
     
     def generated_bat(self):
         x = random.randint(0, 1)
-        y = 1000 - random.randint(100, 900)
+        y = 1000 - random.randint(300, 900)
         if x == 0:
             bat = Bat(-100, y, 0)
         else:
@@ -233,6 +242,48 @@ class Stalagtite_fallen(pygame.sprite.Sprite):
         if self.time_to_die <= 0:
             self.kill()
 
+class Cannot(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.height = 200
+        self.width = 400
+        self.v = 0
+        self.a = 0
+        self.preimage = pygame.image.load('pics/cannot.png').convert_alpha()
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self):
+        super().update()
+
+
+        if abs(self.v) < 20 and self.a != 0:
+            self.v += self.a
+            if abs(self.v) > 20:
+                self.v = 20 * self.v / abs(self.v)
+        if self.a == 0:
+            self.v *= 0.95
+        
+        self.rect.x += self.v
+
+        if self.rect.x < -100 or self.rect.x > 1700:
+            self.v = -self.v * 0.4
+            self.rect.x += 5.1 * self.v
+
+
+    def move(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_a:
+                self.a = -0.3
+            if e.key == pygame.K_d:
+                self.a = 0.3
+        if e.type == pygame.KEYUP:
+            self.a = 0
+
+        
+    
 
 
 
