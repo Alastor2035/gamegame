@@ -1,6 +1,5 @@
 import random
 import pygame
-
 class Game():
     """ Главный класс приложения. """
     
@@ -12,7 +11,7 @@ class Game():
         self.clock = pygame.time.Clock()
         
         # Баланс
-        self.score = 0        
+        self.score = 0      
         self.cave_hp = 200
         self.bat_timer = 0
         self.stal_timer = 0
@@ -20,6 +19,8 @@ class Game():
         # Списки
         self.bats_list = pygame.sprite.Group()
         self.stalagtites_list = pygame.sprite.Group()
+        self.fall_stal_list = pygame.sprite.Group()
+        self.fallen_stal_list = pygame.sprite.Group()
 
 
     def run(self): 
@@ -46,6 +47,8 @@ class Game():
         # отрисовать списки
         self.bats_list.draw(self.screen)
         self.stalagtites_list.draw(self.screen)
+        self.fall_stal_list.draw(self.screen)
+        self.fallen_stal_list.draw(self.screen)
 
         # отобразить
         pygame.display.flip()
@@ -80,12 +83,20 @@ class Game():
         # обновить списки
         self.bats_list.update()
         self.stalagtites_list.update()
+        self.fall_stal_list.update()
+        self.fallen_stal_list.update()
+
+        # kill killed bat
+        pygame.sprite.groupcollide(self.bats_list, self.stalagtites_list, 1, 0)
+        pygame.sprite.groupcollide(self.bats_list, self.fall_stal_list, 1, 0)
+        pygame.sprite.groupcollide(self.bats_list, self.fallen_stal_list, 1, 0)
+
         
         return 1
     
     def generated_bat(self):
         x = random.randint(0, 1)
-        y = 1000 - random.randint(300, 900)
+        y = 1000 - random.randint(100, 900)
         if x == 0:
             bat = Bat(-100, y, 0)
         else:
@@ -96,6 +107,13 @@ class Game():
         x = random.randint(0, 2000)
         stal = Stalagtite(x, -20)
         self.stalagtites_list.add(stal)
+
+    def sel_fall_stal(self, x, y, size):
+        self.fall_stal_list.add(Stalagtite_fall(x, y, size))
+
+    def sel_fallen_stal(self, x, y, size):
+        self.fallen_stal_list.add(Stalagtite_fallen(x, y, size))
+
 
     
 class Bat(pygame.sprite.Sprite):
@@ -139,8 +157,38 @@ class Bat(pygame.sprite.Sprite):
 class Stalagtite(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.height = 100
-        self.width = 100
+        self.height = 1
+        self.width = 1
+        self.time_to_die = 1000
+        self.preimage = pygame.image.load('pics/stalagtite.png').convert_alpha()
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.rect.x = x
+        self.rect.y = y
+
+    
+    def update(self):
+        super().update()
+        self.time_to_die -= 1
+
+
+        # самовыпил
+        if self.time_to_die <= 0:
+            game.sel_fall_stal(self.rect.x, self.rect.y, self.height)
+            self.kill()
+
+        # обновление картинки
+        self.height += 0.1
+        self.width += 0.1
+        self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
+        self.rect = pygame.Rect(self.rect.x+0.5, self.rect.y, self.width, self.height)
+
+class Stalagtite_fall(pygame.sprite.Sprite):
+    def __init__(self, x, y, size):
+        super().__init__()
+        self.height = size
+        self.width = size
+        self.v = 0
         self.preimage = pygame.image.load('pics/stalagtite.png').convert_alpha()
         self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
         self.rect = pygame.Rect(x, y, self.width, self.height)
@@ -151,21 +199,41 @@ class Stalagtite(pygame.sprite.Sprite):
     def update(self):
         super().update()
 
-        # # движение
-        # if self.tol == 0:
-        #     self.rect.x += 5
-        # else:
-        #     self.rect.x -= 5
+        # moving
+        self.v += 1
+        self.rect.y += self.v
 
-        # # самовыпил
-        # if self.rect.x < -110 or self.rect.x > 2110:
-        #     self.kill()
 
-        # обновление картинки
-        self.height += 1
-        self.width += 1
+        # самовыпил
+        if self.rect.y + self.height > 1000:
+            game.sel_fallen_stal(self.rect.x, self.rect.y, self.height)
+            self.kill()
+
+class Stalagtite_fallen(pygame.sprite.Sprite):
+    def __init__(self, x, y, size):
+        super().__init__()
+        self.height = size
+        self.width = size
+        self.time_to_die = 100
+        self.preimage = pygame.image.load('pics/stalagtite.png').convert_alpha()
         self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
-        self.rect = pygame.Rect(self.rect.x-0.5, self.rect.y, self.width, self.height)
+        self.rect = pygame.Rect(x, y, self.width, self.height)
+        self.rect.x = x
+        self.rect.y = y
+
+    
+    def update(self):
+        super().update()
+
+        self.time_to_die -= 1
+
+
+        # самовыпил
+        if self.time_to_die <= 0:
+            self.kill()
+
+
+
 
 
 
@@ -179,6 +247,7 @@ FPS = 60
 
 
 def main():
+    global game
     game = Game(SCREEN_WIDTH, SCREEN_HEIGHT)
     a = 1
     while a:
