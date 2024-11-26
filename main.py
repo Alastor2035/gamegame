@@ -55,12 +55,6 @@ class Game():
         self.cannots_list.draw(self.screen)
         self.balls_list.draw(self.screen)
 
-        # для проверки потом убрать
-        drawText(self.screen, (255, 255, 255), str(self.cave_hp), pygame.Rect(700, 50+35, 300, 30), font_size=30)
-        drawText(self.screen, (255, 255, 255), str(self.score), pygame.Rect(700, 50+35+ 35, 300, 30), font_size=30)
-        drawText(self.screen, (255, 255, 255), str(self.live), pygame.Rect(700, 50+35+35+35, 300, 30), font_size=30)
-
-
         # отобразить
         pygame.display.flip()
 
@@ -77,7 +71,7 @@ class Game():
             else:
                 self.cannot.move(e)
 
-        # обновить таймеры   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Сделать зависимости!!!!!!!!!!!!!!!!!!!!!
+        # обновить таймеры  
         self.bat_timer += 1
         self.stal_timer += 1
         if self.bat_timer == 100:
@@ -140,7 +134,7 @@ class Game():
         self.fallen_stal_list.add(Stalagtite_fallen(x, y, size))
 
     def shot(self, stx, sty, fnx, fny):
-        if len(self.balls_list) <= 3:
+        if len(self.balls_list) < 3:
             dx = fnx - stx
             dy = fny - sty
             self.balls_list.add(Ball(stx, sty, 40*dx/(dx*dx+dy*dy)**0.5, 40*dy/(dx*dx+dy*dy)**0.5))
@@ -353,7 +347,7 @@ def main():
     a = 1
     while a:
         a = game.run()
-    print(game.score)
+    print("Ваш счёт: " + str(game.score))
 
 
 if __name__ == "__main__":
