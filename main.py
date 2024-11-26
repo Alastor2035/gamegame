@@ -153,7 +153,8 @@ class Bat(pygame.sprite.Sprite):
         self.height = 100
         self.width = 100
         self.images = []
-        self.images.append(pygame.transform.scale(pygame.image.load('pics/bat/bat1.png'), (self.width, self.height)))
+        for i in range(19):
+            self.images.append(pygame.transform.scale(pygame.image.load("pics/bat/"+ str(i) +".gif"), (self.width, self.height)).convert_alpha())
         if tol == 0:
             for i in range(len(self.images)):
                 self.images[i] = pygame.transform.flip(self.images[i], True, False)
