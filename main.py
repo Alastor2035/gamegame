@@ -118,11 +118,11 @@ class Game():
     
     def generated_bat(self):
         x = random.randint(0, 1)
-        y = 1000 - random.randint(int(self.height*0.3), int(self.height*0.9))
+        y = self.height - random.randint(int(self.height*0.3), int(self.height*0.9))
         if x == 0:
-            bat = Bat(-100, y, 0)
+            bat = Bat(0, y, 0)
         else:
-            bat = Bat(self.width+100, y, 1)
+            bat = Bat(self.width, y, 1)
         self.bats_list.add(bat)
 
     def generated_stal(self):
