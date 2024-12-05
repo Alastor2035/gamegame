@@ -11,6 +11,8 @@ class Game():
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("bat_cave")
         self.clock = pygame.time.Clock()
+        self.width = width
+        self.height = height
         
         # Баланс
         self.score = 0      
@@ -20,7 +22,7 @@ class Game():
         self.stal_timer = 0
 
         # cannot
-        self.cannot = Cannot(1000, 800)
+        self.cannot = Cannot(self.width*0.5, self.height*0.8)
 
         # Списки
         self.bats_list = pygame.sprite.Group()
@@ -78,7 +80,7 @@ class Game():
         if self.bat_timer == 100:
             self.generated_bat()
             self.bat_timer = 0
-        if self.stal_timer >=  80 + self.cave_hp*0.05:
+        if self.stal_timer >=  80 - self.cave_hp*0.05:
             self.generated_stal()
             self.stal_timer = 0
 
@@ -116,15 +118,15 @@ class Game():
     
     def generated_bat(self):
         x = random.randint(0, 1)
-        y = 1000 - random.randint(300, 900)
+        y = 1000 - random.randint(int(self.height*0.3), int(self.height*0.9))
         if x == 0:
             bat = Bat(-100, y, 0)
         else:
-            bat = Bat(2100, y, 1)
+            bat = Bat(self.width+100, y, 1)
         self.bats_list.add(bat)
 
     def generated_stal(self):
-        x = random.randint(0, 2000)
+        x = random.randint(0, self.width)
         stal = Stalagtite(x, -20)
         self.stalagtites_list.add(stal)
 
@@ -145,8 +147,8 @@ class Game():
 class Bat(pygame.sprite.Sprite):
     def __init__(self, x, y, tol):
         super().__init__()
-        self.height = 100
-        self.width = 100
+        self.height = SCREEN_HEIGHT*0.1
+        self.width = SCREEN_WIDTH*0.1
         self.images = []
         for i in range(19):
             self.images.append(pygame.transform.scale(pygame.image.load("pics/bat/"+ str(i) +".gif"), (self.width, self.height)).convert_alpha())
@@ -171,7 +173,7 @@ class Bat(pygame.sprite.Sprite):
             self.rect.x -= 5
 
         # самовыпил
-        if self.rect.x < -110 or self.rect.x > 2110:
+        if self.rect.x < -110 or self.rect.x > SCREEN_WIDTH+110:
             self.kill()
 
         # обновление картинки
@@ -205,8 +207,8 @@ class Stalagtite(pygame.sprite.Sprite):
             self.kill()
 
         # обновление картинки
-        self.height += 0.1
-        self.width += 0.1
+        self.height += 0.1 * SCREEN_HEIGHT/1000
+        self.width += 0.1 * SCREEN_HEIGHT/1000
         self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
         self.rect = pygame.Rect(self.rect.x+0.5, self.rect.y, self.width, self.height)
 
@@ -232,7 +234,7 @@ class Stalagtite_fall(pygame.sprite.Sprite):
 
 
         # самовыпил
-        if self.rect.y + self.height > 1000:
+        if self.rect.y + self.height > SCREEN_HEIGHT:
             game.set_fallen_stal(self.rect.x, self.rect.y, self.height)
             game.cave_hp -= 5
             self.kill()
@@ -263,8 +265,8 @@ class Stalagtite_fallen(pygame.sprite.Sprite):
 class Cannot(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.height = 200
-        self.width = 400
+        self.height = SCREEN_HEIGHT * 0.2
+        self.width = SCREEN_WIDTH * 0.2
         self.v = 0
         self.a = 0
         self.preimage = pygame.image.load('pics/cannot.png').convert_alpha()
@@ -286,7 +288,7 @@ class Cannot(pygame.sprite.Sprite):
         
         self.rect.x += self.v
 
-        if self.rect.x < -100 or self.rect.x > 1700:
+        if self.rect.x < -100  * SCREEN_WIDTH/2000 or self.rect.x > SCREEN_WIDTH-self.width*0.8:
             self.v = -self.v * 0.4
             self.rect.x += 5.1 * self.v
 
@@ -307,10 +309,10 @@ class Cannot(pygame.sprite.Sprite):
 class Ball(pygame.sprite.Sprite):
     def __init__(self, x, y, vx, vy):
         super().__init__()
-        self.height = 50
-        self.width = 50
-        self.vx = vx
-        self.vy = vy
+        self.height = 50 * SCREEN_WIDTH/2000
+        self.width = 50 * SCREEN_WIDTH/2000
+        self.vx = vx  * SCREEN_WIDTH/2000
+        self.vy = vy  * SCREEN_WIDTH/2000
         self.preimage = pygame.image.load('pics/ball.png').convert_alpha()
         self.image = pygame.transform.scale(self.preimage, (self.width, self.height))
         self.rect = pygame.Rect(x+ self.width/2, y+self.height/2, self.width/2, self.height/2)
@@ -319,11 +321,11 @@ class Ball(pygame.sprite.Sprite):
         super().update()
 
         self.rect.x += self.vx
-        self.vy += 1
+        self.vy += 1  * SCREEN_WIDTH/2000
         self.rect.y += self.vy
 
         # самовыпил
-        if self.rect.y > 1100:
+        if self.rect.y > SCREEN_HEIGHT + 50:
             self.kill()
 
         
@@ -336,8 +338,10 @@ class Ball(pygame.sprite.Sprite):
 
 
 #куча констант
-SCREEN_WIDTH = 2000
-SCREEN_HEIGHT = 1000
+global SCREEN_WIDTH
+SCREEN_WIDTH = 800
+global SCREEN_HEIGHT
+SCREEN_HEIGHT = SCREEN_WIDTH // 2
 FPS = 60
 
 
