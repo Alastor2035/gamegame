@@ -34,10 +34,11 @@ class Game():
 
 
     def run(self): 
-        a = self.update()
-        self.on_draw()
-        self.clock.tick(FPS)
-        return a
+        running = 1
+        while running:
+            running = self.update()
+            self.on_draw()
+            self.clock.tick(FPS)
             
 
     
@@ -344,9 +345,7 @@ FPS = 60
 def main():
     global game
     game = Game(SCREEN_WIDTH, SCREEN_HEIGHT)
-    a = 1
-    while a:
-        a = game.run()
+    game.run()
     print("Ваш счёт: " + str(game.score))
 
 
